@@ -1,3 +1,4 @@
+import re
 from nltk.tokenize import sent_tokenize
 
 from nltk.tokenize import word_tokenize
@@ -60,15 +61,28 @@ def tokenizeWords(sentences):
         words.extend(word_tokenize(sentence))
     return words
 
+# Get key sentences based on search pattern of key words
+def extractkeySentences(sentences, searchPattern):
+    matchedSentences = []
+    for sentence in sentences:
+        # if sentence matches desired pattern, add to matchedSentences
+        if re.search(searchPattern, sentence.lower()):
+            matchedSentences.append(sentence)
+    return matchedSentences
+
 # Get User Details
-welcomeUser()
-username = getUserName()
-greetUser(username)
+# welcomeUser()
+# username = getUserName()
+# greetUser(username)
 
 # Extract and Tokenize Text
 articleTextRaw = getArticleText()
 articleSentences = tokenizeSentences(articleTextRaw)
 articleWords = tokenizeWords(articleSentences)
+
+# Get Analytics
+stockSearchPattern = "0-9] | [%$€£] |thousand|million|billion|trillion|profit|loss"
+keySentences = extractkeySentences(articleSentences, stockSearchPattern)
 
 # Print for testing
 print("GOT:")
