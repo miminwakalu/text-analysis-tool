@@ -1,6 +1,5 @@
 import re
 from nltk.tokenize import sent_tokenize
-
 from nltk.tokenize import word_tokenize
 
 text = "Python is amazing"
@@ -61,14 +60,32 @@ def tokenizeWords(sentences):
         words.extend(word_tokenize(sentence))
     return words
 
-# Get key sentences based on search pattern of key words
+# Get the key sentences based on search patter of key words
 def extractkeySentences(sentences, searchPattern):
     matchedSentences = []
     for sentence in sentences:
-        # if sentence matches desired pattern, add to matchedSentences
+        # If sentence matches desired pattern, and to matchedSentences
         if re.search(searchPattern, sentence.lower()):
             matchedSentences.append(sentence)
     return matchedSentences
+
+# Get the average words per sentence, excluding punction
+def getWordsPerSentence(sentences):
+    totalWords = 0
+    for sentence in sentences:
+        totalWords += len(sentence.split(""))
+    return totalWords / len(sentences)
+
+# Filter raw tokenized words list to only include
+# valid english words
+def cleanseWordList(words):
+    cleansedWords = []
+    invalidWordPattern = "[^a-zA-Z-+]"
+    for word in words:
+        cleansedWord = word.replace(".", "").lower()
+        if not re.search(invalidWordPattern, cleansedWord):
+            cleansedWords.append(cleansedWord)
+    return cleansedWords
 
 # Get User Details
 # welcomeUser()
@@ -80,11 +97,15 @@ articleTextRaw = getArticleText()
 articleSentences = tokenizeSentences(articleTextRaw)
 articleWords = tokenizeWords(articleSentences)
 
-# Get Analytics
+# Get Sentence Analytics
 stockSearchPattern = "0-9] | [%$€£] |thousand|million|billion|trillion|profit|loss"
 keySentences = extractkeySentences(articleSentences, stockSearchPattern)
+wordsPerSentence = getWordsPerSentence(articleSentences)
+
+# Get Word Analytics
+articleWordsClensed = cleanseWordList(articleWords)
 
 # Print for testing
 print("GOT:")
-print(articleWords)
+print(articleWordsClensed)
 
