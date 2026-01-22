@@ -121,9 +121,9 @@ def cleanseWordList(posTaggedWordTuples):
 # MAIN EXECUTION
 # =========================
 
-welcomeUser()
-username = getUserName()
-greetUser(username)
+# welcomeUser()
+# username = getUserName()
+# greetUser(username)
 
 articleTextRaw = getArticleText()
 articleSentences = tokenizeSentences(articleTextRaw)
