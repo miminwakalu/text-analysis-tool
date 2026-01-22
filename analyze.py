@@ -2,9 +2,11 @@ import re
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet, stopwords
 from random_username.generate import generate_username
 
 # Download necessary NLTK data
+nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
@@ -12,6 +14,8 @@ nltk.download('omw-1.4')
 
 # Initialize lemmatizer
 wordLemmatizer = WordNetLemmatizer()
+stopWords = set(stopwords.words('english'))
+
 
 # =========================
 # USER INTERACTION
@@ -108,7 +112,7 @@ def cleanseWordList(posTaggedWordTuples):
         word = posTaggedWordTuple[0]
         pos = posTaggedWordTuple[1]
         cleanedWord = word.replace(".", "").lower()
-        if not re.search(invalidWordPattern, cleanedWord) and len(cleanedWord) > 1:
+        if not re.search(invalidWordPattern, cleanedWord) and len(cleanedWord) > 1 and cleanedWord not in stopWords:
             lemma = wordLemmatizer.lemmatize(cleanedWord, treebankPosToWordnetPos(pos))
             cleansedWords.append(lemma)
     return cleansedWords
