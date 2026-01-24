@@ -3,6 +3,7 @@ import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet, stopwords
+from wordcloud import WordCloud
 from random_username.generate import generate_username
 
 # Download necessary NLTK data
@@ -138,16 +139,14 @@ wordsPerSentence = getWordsPerSentence(articleSentences)
 wordsPosTagged = nltk.pos_tag(articleWords)
 articleWordsCleansed = cleanseWordList(wordsPosTagged)
 
+# Generate word cloud
+separator = " "
+wordcloud = WordCloud(width = 1000, height = 700, \
+                      background_color="white", colormap="Set3", collocations=False).generate(separator.join(articleWordsCleansed))
+wordcloud.to_file("results/wordcloud.png")
+
 # =========================
 # OUTPUT
 # =========================
 
-print("\nGOT:")
-print(articleWordsCleansed)
-print("\nAverage words per sentence:", wordsPerSentence)
-print("\nKey Sentences:")
-for sentence in keySentences:
-    print("-", sentence)
-
-print("\nPOS Tagged Words:")
-print(wordsPosTagged)
+print("Done!")
