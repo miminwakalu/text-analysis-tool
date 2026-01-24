@@ -1,4 +1,4 @@
-import re
+import re, nltk, json
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -144,14 +144,31 @@ articleWordsCleansed = cleanseWordList(wordsPosTagged)
 
 # Generate word cloud
 separator = " "
+wordCloudFilePath = "results/wordcloud.png"
 wordcloud = WordCloud(width = 1000, height = 700, \
                       background_color="white", colormap="Set3", collocations=False).generate(separator.join(articleWordsCleansed))
-wordcloud.to_file("results/wordcloud.png")
+wordcloud.to_file(wordCloudFilePath)
 
 # Run sentiment analysis
 sentimentResult = sentimentAnalyzer.polarity_scores(articleTextRaw)
 
+# Collate analysis into one dictionary
+finalResult = {
+    "username": username,
+    "data": {
+        "keySentences": keySentences,
+        "wordsPerSentence": round(wordsPerSentence, 1),
+        "wordCloudPath": wordCloudFilePath,
+        "sentimentAnalysis": sentimentResult,
+    },
+    "metadata": {
+        "sentencesAnalyzed": len(articleSentences),
+        "wordsAnalyzed": len(articleWordsCleansed),
+    }
+}
+finalResultJson = json.dumps(finalResult, indent=4)
+
 # =========================
 # OUTPUT
 # =========================
-print(sentimentResult)
+print(finalResultJson)
