@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Any
 from datetime import datetime
+from bs4 import BeautifulSoup
 import requests
 import yfinance as yf
 def extractBasicStockInfo(data):
@@ -48,11 +49,17 @@ headers = {
                   'Chrome/120.0.0.0 Safari/537.36'
 }
 def extractCompanyNewsArticles(newsArticles):
-    url = newsArticles[0] ['link']
-    page = requests.get(url, headers=headers)
-    print(page.status_code)
-    print(page.text)
-    print(url)
+    for newsArticle in newsArticles:
+        url = newsArticle['link']
+        page = requests.get(url, headers=headers)
+        print(page.text)
+        soup = BeautifulSoup(page.text, 'html.parser')
+        print(soup.prettify())
+        print(url)
+        if soup.findAll(string = 'Continue reading'):
+            print('Tag found - should skip')
+        else:
+            print('Tag not found - should not skip')
 
 def getCompanyStockInfo(tickerSymbol):
     # Get data from Yahool Finance API
