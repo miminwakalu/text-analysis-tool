@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Any
 from datetime import datetime
+import requests
 import yfinance as yf
 def extractBasicStockInfo(data):
     keysToExtract = [ 'longName', 'website', 'industry', 'marketCap', 'previousClose', 'totalRevenue', 'bookValue' ]
@@ -13,7 +14,7 @@ def extractBasicStockInfo(data):
     return basicInfo
 
 def getPriceHistory(company):
-    historyDf = company.history(period="12mo")
+    historyDf = company.history(period='12mo')
     prices = historyDf['Open'].tolist()
     dates = historyDf.index.strftime('%Y-%m-%d').tolist()
     print(dates)
@@ -41,6 +42,18 @@ def getCompanyNews(company):
         allNewsArticles.append(newsDictToAddd)
     return allNewsArticles
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                  'AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/120.0.0.0 Safari/537.36'
+}
+def extractCompanyNewsArticles(newsArticles):
+    url = newsArticles[0] ['link']
+    page = requests.get(url, headers=headers)
+    print(page.status_code)
+    print(page.text)
+    print(url)
+
 def getCompanyStockInfo(tickerSymbol):
     # Get data from Yahool Finance API
     company = yf.Ticker(tickerSymbol)
@@ -50,6 +63,6 @@ def getCompanyStockInfo(tickerSymbol):
     priceHistory = getPriceHistory(company)
     futureEarningsDates = getEarningsDate(company)
     newsArticles = getCompanyNews(company)
-   # print(priceHistory)
+   
 
 getCompanyStockInfo('MSFT')
