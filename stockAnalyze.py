@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from typing import Any
 from bs4 import BeautifulSoup
 import requests
 import yfinance as yf
@@ -17,23 +16,16 @@ def extractBasicStockInfo(data):
         'totalRevenue',
         'bookValue'
     ]
-    basicInfo = {}
 
-    for key in keysToExtract:
-        basicInfo[key] = data.get(key, '')
-
-    return basicInfo
+    return {key: data.get(key, '') for key in keysToExtract}
 
 
 def getPriceHistory(company):
     historyDf = company.history(period='12mo')
-    prices = historyDf['Open'].tolist()
-    dates = historyDf.index.strftime('%Y-%m-%d').tolist()
-    print(dates)
 
     return {
-        'prices': prices,
-        'dates': dates
+        'prices': historyDf['Open'].tolist(),
+        'dates': historyDf.index.strftime('%Y-%m-%d').tolist()
     }
 
 
@@ -41,7 +33,6 @@ def getEarningsDate(company):
     earningsDatesDf = company.earnings_dates
     allDates = earningsDatesDf.index.strftime('%Y-%m-%d').tolist()
 
-    # ✅ FIXED HERE: use datetime.strptime, not date.strptime
     dateObjects = [
         datetime.strptime(date_str, '%Y-%m-%d').date()
         for date_str in allDates
@@ -49,37 +40,36 @@ def getEarningsDate(company):
 
     currentDate = date.today()
 
-    futureDates = [
+    return [
         d.strftime('%Y-%m-%d')
         for d in dateObjects
         if d > currentDate
     ]
 
-    return futureDates
-
 
 def getCompanyNews(company):
-    news = company.news
     allNewsArticles = []
 
-    for newDict in news:
-        newsDictToAdd = {
-            'title': newDict.get('title', ''),
-            'link': newDict.get('link', '')
-        }
-
-        # Skip items that don't have a link
-        if newsDictToAdd['link']:
-            allNewsArticles.append(newsDictToAdd)
+    for newDict in company.news:
+        link = newDict.get('link', '')
+        if link:
+            allNewsArticles.append({
+                'title': newDict.get('title', ''),
+                'link': link
+            })
 
     return allNewsArticles
 
+
 def extractNewsArticleTextFromHtml(soup):
-    result = soup.find_all('div', {'class':'caas-body'})
+    alltext = ''
+    result = soup.find_all('div', {'class': 'caas-body'})
+
     for res in result:
-        print(res.text)
-        alltext += res.text
+        alltext += res.get_text(separator=' ', strip=True) + ' '
+
     return alltext
+
 
 headers = {
     'User-Agent': (
@@ -92,44 +82,50 @@ headers = {
 
 def extractCompanyNewsArticles(newsArticles):
     allArticleTexts = ''
+
     for newsArticle in newsArticles:
         url = newsArticle['link']
-        page = requests.get(url, headers=headers)
+
+        try:
+            page = requests.get(url, headers=headers, timeout=10)
+            page.raise_for_status()
+        except requests.RequestException:
+            continue
 
         soup = BeautifulSoup(page.text, 'html.parser')
 
-        if not soup.find_all(string='Continue reading'):
-            print('Tag found - should skip')
-        else:
-            print('Tag not found - should not skip')
-            articleText = extractNewsArticleTextFromHtml(soup)
+        if soup.find(string='Continue reading'):
+            continue
+
+        articleText = extractNewsArticleTextFromHtml(soup)
+        allArticleTexts += articleText + ' '
+
     return allArticleTexts
 
+
 def getCompanyStockInfo(tickerSymbol):
-    # Get data from Yahoo Finance API
     company = yf.Ticker(tickerSymbol)
 
-    # Get basic info on company
     basicInfo = extractBasicStockInfo(company.info)
     priceHistory = getPriceHistory(company)
     futureEarningsDates = getEarningsDate(company)
     newsArticles = getCompanyNews(company)
+
     newsArticlesAllText = extractCompanyNewsArticles(newsArticles)
-    newsTextAnalysis = analyze.analyzeText(newsArticlesAllText)
-
-    finalResultJson = json.dumps(newsTextAnalysis, indent=4)
-
-    # =========================
-    # OUTPUT
-    # =========================
-    print(finalResultJson)
+    newsTextAnalysis = analyze.analyzeText(
+        newsArticlesAllText,
+        tickerSymbol
+    )
 
     return {
         'basicInfo': basicInfo,
         'priceHistory': priceHistory,
         'futureEarningsDates': futureEarningsDates,
-        'newsArticles': newsArticles
+        'newsArticles': newsArticles,
+        'newsTextAnalysis': newsTextAnalysis
     }
 
 
-getCompanyStockInfo('MSFT')
+# Example usage:
+# companyStockAnalysis = getCompanyStockInfo('MSFT')
+# print(json.dumps(companyStockAnalysis, indent=4))
