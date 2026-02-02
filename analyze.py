@@ -1,5 +1,8 @@
-import re, nltk, json
+import re
+import json
+import os
 import nltk
+
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet, stopwords
@@ -7,15 +10,21 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 from random_username.generate import generate_username
 
-# Download necessary NLTK data
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('vader_lexicon')
-nltk.download('omw-1.4')
 
-# Initialize lemmatizer
+# =========================
+# NLTK DOWNLOADS
+# =========================
+nltk.download('stopwords', quiet=True)
+nltk.download('wordnet', quiet=True)
+nltk.download('punkt', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
+nltk.download('vader_lexicon', quiet=True)
+nltk.download('omw-1.4', quiet=True)
+
+
+# =========================
+# INITIALIZATIONS
+# =========================
 wordLemmatizer = WordNetLemmatizer()
 stopWords = set(stopwords.words('english'))
 sentimentAnalyzer = SentimentIntensityAnalyzer()
@@ -24,19 +33,26 @@ sentimentAnalyzer = SentimentIntensityAnalyzer()
 # =========================
 # USER INTERACTION
 # =========================
-
 def welcomeUser():
     print(
         "\nWelcome to the text analysis tool. "
         "I will mine and analyze a body of text from a file you give me!"
     )
 
+
 def getUserName():
     maxAttempts = 3
     attempts = 0
+
     while attempts < maxAttempts:
-        prompt = "\nTo get started, please enter your name:\n" if attempts == 0 else "\nPlease try again:\n"
+        prompt = (
+            "\nTo get started, please enter your name:\n"
+            if attempts == 0
+            else "\nPlease try again:\n"
+        )
+
         usernameFromInput = input(prompt).strip()
+
         if len(usernameFromInput) < 5 or not usernameFromInput.isidentifier():
             print(
                 "Your username must be at least 5 characters long, "
@@ -45,28 +61,38 @@ def getUserName():
             )
         else:
             return usernameFromInput
+
         attempts += 1
+
     print(f"\nExhausted all {maxAttempts} attempts, assigning username instead...")
     return generate_username()
+
 
 def greetUser(name):
     print("Hello, " + name)
 
+
 # =========================
 # FILE HANDLING
 # =========================
-
 def getArticleText():
-    with open("files/article.txt", "r", encoding="utf-8") as f:
+    file_path = "files/article.txt"
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError("files/article.txt was not found.")
+
+    with open(file_path, "r", encoding="utf-8") as f:
         rawText = f.read()
+
     return rawText.replace("\n", " ").replace("\r", " ")
+
 
 # =========================
 # TOKENIZATION
 # =========================
-
 def tokenizeSentences(rawText):
     return sent_tokenize(rawText)
+
 
 def tokenizeWords(sentences):
     words = []
@@ -74,10 +100,10 @@ def tokenizeWords(sentences):
         words.extend(word_tokenize(sentence))
     return words
 
+
 # =========================
 # SENTENCE ANALYTICS
 # =========================
-
 def extractKeySentences(sentences, searchPattern):
     matchedSentences = []
     for sentence in sentences:
@@ -85,13 +111,17 @@ def extractKeySentences(sentences, searchPattern):
             matchedSentences.append(sentence)
     return matchedSentences
 
+
 def getWordsPerSentence(sentences):
     if not sentences:
         return 0
+
     totalWords = 0
     for sentence in sentences:
         totalWords += len(word_tokenize(sentence))
+
     return totalWords / len(sentences)
+
 
 # =========================
 # WORD ANALYTICS
@@ -103,72 +133,99 @@ posToWordnetTag = {
     'R': 'r'   # adverb
 }
 
+
 def treebankPosToWordnetPos(partOfSpeech):
     posFirstChar = partOfSpeech[0]
-    if posFirstChar in posToWordnetTag:
-        return posToWordnetTag[posFirstChar]
-    return 'n'  # default to noun
+    return posToWordnetTag.get(posFirstChar, 'n')
+
 
 def cleanseWordList(posTaggedWordTuples):
     cleansedWords = []
     invalidWordPattern = r"[^a-zA-Z-+]"
-    for posTaggedWordTuple in posTaggedWordTuples:
-        word = posTaggedWordTuple[0]
-        pos = posTaggedWordTuple[1]
+
+    for word, pos in posTaggedWordTuples:
         cleanedWord = word.replace(".", "").lower()
-        if not re.search(invalidWordPattern, cleanedWord) and len(cleanedWord) > 1 and cleanedWord not in stopWords:
-            lemma = wordLemmatizer.lemmatize(cleanedWord, treebankPosToWordnetPos(pos))
+
+        if (
+            not re.search(invalidWordPattern, cleanedWord)
+            and len(cleanedWord) > 1
+            and cleanedWord not in stopWords
+        ):
+            lemma = wordLemmatizer.lemmatize(
+                cleanedWord,
+                treebankPosToWordnetPos(pos)
+            )
             cleansedWords.append(lemma)
+
     return cleansedWords
 
+
 # =========================
-# MAIN EXECUTION
+# MAIN ANALYSIS
 # =========================
+def analyzeText(TextToAnalyze, username):
+    articleSentences = tokenizeSentences(TextToAnalyze)
+    articleWords = tokenizeWords(articleSentences)
 
-welcomeUser()
-username = getUserName()
-greetUser(username)
+    # Sentence analytics
+    stockSearchPattern = r"\b([0-9]+|[%$€£]|thousand|million|billion|trillion|profit|loss)\b"
+    keySentences = extractKeySentences(articleSentences, stockSearchPattern)
+    wordsPerSentence = getWordsPerSentence(articleSentences)
 
-articleTextRaw = getArticleText()
-articleSentences = tokenizeSentences(articleTextRaw)
-articleWords = tokenizeWords(articleSentences)
+    # POS tagging and cleansing
+    wordsPosTagged = nltk.pos_tag(articleWords)
+    articleWordsCleansed = cleanseWordList(wordsPosTagged)
 
-# Sentence analytics
-stockSearchPattern = r"[0-9]|[%$€£]|thousand|million|billion|trillion|profit|loss"
-keySentences = extractKeySentences(articleSentences, stockSearchPattern)
-wordsPerSentence = getWordsPerSentence(articleSentences)
+    # Ensure results directory exists
+    os.makedirs("results", exist_ok=True)
 
-# POS tagging and cleansing
-wordsPosTagged = nltk.pos_tag(articleWords)
-articleWordsCleansed = cleanseWordList(wordsPosTagged)
+    # Generate word cloud
+    wordCloudFilePath = "results/wordcloud.png"
+    wordcloud = WordCloud(
+        width=1000,
+        height=700,
+        background_color="white",
+        colormap="Set3",
+        collocations=False
+    ).generate(" ".join(articleWordsCleansed))
 
-# Generate word cloud
-separator = " "
-wordCloudFilePath = "results/wordcloud.png"
-wordcloud = WordCloud(width = 1000, height = 700, \
-                      background_color="white", colormap="Set3", collocations=False).generate(separator.join(articleWordsCleansed))
-wordcloud.to_file(wordCloudFilePath)
+    wordcloud.to_file(wordCloudFilePath)
 
-# Run sentiment analysis
-sentimentResult = sentimentAnalyzer.polarity_scores(articleTextRaw)
+    # Sentiment analysis
+    sentimentResult = sentimentAnalyzer.polarity_scores(TextToAnalyze)
 
-# Collate analysis into one dictionary
-finalResult = {
-    "username": username,
-    "data": {
-        "keySentences": keySentences,
-        "wordsPerSentence": round(wordsPerSentence, 1),
-        "wordCloudPath": wordCloudFilePath,
-        "sentimentAnalysis": sentimentResult,
-    },
-    "metadata": {
-        "sentencesAnalyzed": len(articleSentences),
-        "wordsAnalyzed": len(articleWordsCleansed),
+    # Final result
+    finalResult = {
+        "username": username,
+        "data": {
+            "keySentences": keySentences,
+            "wordsPerSentence": round(wordsPerSentence, 1),
+            "wordCloudPath": wordCloudFilePath,
+            "sentimentAnalysis": sentimentResult,
+        },
+        "metadata": {
+            "sentencesAnalyzed": len(articleSentences),
+            "wordsAnalyzed": len(articleWordsCleansed),
+        }
     }
-}
-finalResultJson = json.dumps(finalResult, indent=4)
+
+    return finalResult
+
 
 # =========================
-# OUTPUT
+# PROGRAM ENTRY
 # =========================
-print(finalResultJson)
+def runAsFile():
+    welcomeUser()
+    username = getUserName()
+    greetUser(username)
+
+    articleTextRaw = getArticleText()
+    result = analyzeText(articleTextRaw, username)
+
+    print("\nAnalysis Result:")
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    runAsFile()

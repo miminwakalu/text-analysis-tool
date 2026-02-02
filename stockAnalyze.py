@@ -3,6 +3,8 @@ from typing import Any
 from bs4 import BeautifulSoup
 import requests
 import yfinance as yf
+import analyze
+import json
 
 
 def extractBasicStockInfo(data):
@@ -113,7 +115,14 @@ def getCompanyStockInfo(tickerSymbol):
     futureEarningsDates = getEarningsDate(company)
     newsArticles = getCompanyNews(company)
     newsArticlesAllText = extractCompanyNewsArticles(newsArticles)
-    print(newsArticlesAllText)
+    newsTextAnalysis = analyze.analyzeText(newsArticlesAllText)
+
+    finalResultJson = json.dumps(newsTextAnalysis, indent=4)
+
+    # =========================
+    # OUTPUT
+    # =========================
+    print(finalResultJson)
 
     return {
         'basicInfo': basicInfo,
