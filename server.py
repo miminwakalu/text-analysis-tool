@@ -14,10 +14,10 @@ app = Flask(__name__)
 def healthCheck():
     return 'Flask server is up and running!'
 
-@app.route('/analyze-stock')
+@app.route('/analyze-stock/<ticker>')
 # ‘/’ URL is bound with hello_world() function.
-def analyzeStock():
-    return {'data': 'Analysis coming soon'}
+def analyzeStock(ticker):
+    return {'data': f'Analysis for stock {ticker} coming soon'}
 
 # main driver function
 if __name__ == '__main__':
