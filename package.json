@@ -1,0 +1,24 @@
+{
+  "name": "text-analysis-tool",
+  "version": "1.0.0",
+  "description": "Python tool that mines and analyzes a body of text from a given file",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miminwakalu/text-analysis-tool.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/miminwakalu/text-analysis-tool/issues"
+  },
+  "homepage": "https://github.com/miminwakalu/text-analysis-tool#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
