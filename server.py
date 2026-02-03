@@ -11,8 +11,13 @@ app = Flask(__name__)
 # the associated function.
 @app.route('/health')
 # ‘/’ URL is bound with hello_world() function.
-def hello_world():
+def healthCheck():
     return 'Flask server is up and running!'
+
+@app.route('/analyze-stock')
+# ‘/’ URL is bound with hello_world() function.
+def analyzeStock():
+    return {'data': 'Analysis coming soon'}
 
 # main driver function
 if __name__ == '__main__':
